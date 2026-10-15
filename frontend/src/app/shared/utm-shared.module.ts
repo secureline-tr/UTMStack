@@ -122,6 +122,9 @@ import {
   FederationEmailConfigPageComponent
 } from '../federation/pages/email-config/federation-email-config.page.component';
 import {
+  FederationTfaConfigPageComponent
+} from '../federation/pages/tfa-config/federation-tfa-config.page.component';
+import {
   AppModuleDisabledWarningComponent
 } from './components/utm/config/app-module-disabled-warning/app-module-disabled-warning.component';
 import {UtmEmailConfCheckComponent} from './components/utm/config/shared/components/utm-email-conf-check/utm-email-conf-check.component';
@@ -352,6 +355,7 @@ import {ScheduleConfigComponent} from './components/schedule-config/schedule-con
     AppConfigParamsComponent,
     AppConfigSectionsComponent,
     FederationEmailConfigPageComponent,
+    FederationTfaConfigPageComponent,
     AppModuleDisabledWarningComponent,
     AppConfigDeleteConfirmComponent,
     UtmScrollTopComponent,
