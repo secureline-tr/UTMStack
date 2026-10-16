@@ -1,4 +1,5 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { toast } from 'sonner'
 import { MemoryRouter } from 'react-router-dom'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { LogExplorerTabConfig } from '../types/log-explorer.types'
@@ -29,11 +30,18 @@ vi.mock('../services/log-explorer-http.service', () => ({
 }))
 vi.mock('./QueryBar', () => ({
   QueryBar: ({ onSelect }: { onSelect: (ds: string, dt: string | null) => void }) =>
-    <button onClick={() => onSelect('events', null)}>change dataset</button>,
+    <>
+      <button onClick={() => onSelect('events', null)}>change dataset</button>
+      <button onClick={() => onSelect('logs', 'test-type')}>select type</button>
+      <button onClick={() => onSelect('logs', null)}>all types</button>
+    </>,
 }))
 vi.mock('./FieldSidebar', () => ({
-  FieldSidebar: ({ onToggleColumn }: { onToggleColumn: (field: string) => void }) =>
-    <button onClick={() => onToggleColumn('log.user')}>toggle user</button>,
+  FieldSidebar: ({ onToggleColumn, onResetColumns }: { onToggleColumn: (field: string) => void; onResetColumns: () => void }) =>
+    <>
+      <button onClick={() => onToggleColumn('log.user')}>toggle user</button>
+      <button onClick={onResetColumns}>reset columns</button>
+    </>,
 }))
 vi.mock('./log-table', () => ({
   LogTable: ({ columns }: { columns: string[] }) => <output data-testid="columns">{JSON.stringify(columns)}</output>,
@@ -71,6 +79,32 @@ beforeEach(() => {
 })
 
 describe('saved-search columns', () => {
+  it('switches type layouts, resets only the current type and persists both layouts', async () => {
+    const notification = vi.spyOn(toast, 'success')
+    const onConfigChange = vi.fn()
+    render(<MemoryRouter><LogExplorerView initial={initial} onConfigChange={onConfigChange} /></MemoryRouter>)
+    await waitFor(() => expect(onConfigChange).toHaveBeenCalled())
+    fireEvent.click(screen.getByText('select type'))
+    expect(screen.getByTestId('columns')).toHaveTextContent('[]')
+    fireEvent.click(screen.getByText('toggle user'))
+    expect(screen.getByTestId('columns')).toHaveTextContent('["log.user"]')
+    fireEvent.click(screen.getByText('all types'))
+    expect(screen.getByTestId('columns')).toHaveTextContent('["log.duration","log.user"]')
+    fireEvent.click(screen.getByText('select type'))
+    expect(screen.getByTestId('columns')).toHaveTextContent('["log.user"]')
+    fireEvent.click(screen.getByText('reset columns'))
+    expect(screen.getByTestId('columns')).toHaveTextContent('[]')
+    fireEvent.click(screen.getByText('all types'))
+    expect(screen.getByTestId('columns')).toHaveTextContent('["log.duration","log.user"]')
+    expect(onConfigChange.mock.lastCall?.[0].columnLayouts).toEqual({
+      '["logs",null]': initial.columns, '["logs","test-type"]': [],
+    })
+    act(() => notification.mock.lastCall?.[1]?.action && (notification.mock.lastCall[1].action as unknown as { onClick: () => void }).onClick())
+    expect(screen.getByTestId('columns')).toHaveTextContent('["log.duration","log.user"]')
+    expect(onConfigChange.mock.lastCall?.[0].columnLayouts['["logs","test-type"]']).toEqual(['log.user'])
+    notification.mockRestore()
+  })
+
   it('saves current columns in order and restores them in a fresh view', async () => {
     const view = await openView()
     fireEvent.click(screen.getByText('toggle user'))
