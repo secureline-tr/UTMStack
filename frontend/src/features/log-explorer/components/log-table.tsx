@@ -1,3 +1,4 @@
+import { useDateFormat } from '@/shared/lib/datetime'
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { TFunction } from 'i18next'
@@ -200,9 +201,10 @@ function LogTableImpl({
   onRemoveColumn?: (field: string) => void
 }) {
   const { t } = useTranslation()
+  const { prefs } = useDateFormat()
   const tableColumns = useMemo(
     () => buildColumns(t, { columns, autoColumns, expanded, onRemoveColumn, onReorderColumn }),
-    [t, columns, autoColumns, expanded, onRemoveColumn, onReorderColumn],
+    [t, columns, autoColumns, expanded, onRemoveColumn, onReorderColumn, prefs],
   )
   // Widths are kept per column set, and the set changes what the columns are:
   // the table starts over with its own sizes whenever it does.
